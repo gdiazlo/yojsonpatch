@@ -6,25 +6,14 @@ exception Operation_error of string
 exception Operation_not_implemented of string
 
 type operation =
-  | Add of Jsonpointer.pointer * Yojson.Safe.t
-  | Remove of Jsonpointer.pointer
-  | Replace of Jsonpointer.pointer * Yojson.Safe.t
-  | Move of Jsonpointer.pointer * Jsonpointer.pointer
-  | Copy of Jsonpointer.pointer * Jsonpointer.pointer
-  | Test of Jsonpointer.pointer * Yojson.Safe.t
+  | Add of Jsonpointer.t * Yojson.Safe.t
+  | Remove of Jsonpointer.t
+  | Replace of Jsonpointer.t * Yojson.Safe.t
+  | Move of Jsonpointer.t * Jsonpointer.t
+  | Copy of Jsonpointer.t * Jsonpointer.t
+  | Test of Jsonpointer.t * Yojson.Safe.t
 
-type patch = operation list
-
-let pp_assoc ppf assoc =
-  let pp_pair ppf (key, value) =
-    Format.fprintf ppf "@[<hov 2>%s: %a@]" key Yojson.Safe.pp value
-  in
-  Format.fprintf
-    ppf
-    "@[<hov 2>[%a]@]"
-    (Format.pp_print_list ~pp_sep:Format.pp_print_space pp_pair)
-    assoc
-;;
+type t = operation list
 
 let operation_pp fmt operation =
   match operation with
@@ -41,7 +30,6 @@ let operation_pp fmt operation =
     Format.fprintf fmt "Test %a %a" Jsonpointer.pp path Yojson.Safe.pp value
 ;;
 
-(** [pp fmt patch] prints [patch] into [fmt] *)
 let pp fmt patch =
   Format.fprintf fmt "[";
   List.iter patch ~f:(fun op -> operation_pp fmt op);
@@ -97,14 +85,12 @@ let op_from_json json =
   | Yojson.Safe.Util.Type_error (msg, _) -> raise (Invalid_operation msg)
 ;;
 
-(** [from_json json] parses [json] into a JSON patch *)
 let from_json json =
   match json with
   | `List l -> List.map l ~f:(fun op -> op_from_json op)
   | _ -> raise (Invalid_patch "patch must be an array of operations")
 ;;
 
-(** [from_string s] parses [s] into a JSON patch *)
 let from_string s =
   try
     let json = Yojson.Safe.from_string s in
@@ -143,7 +129,7 @@ let split_at_index i lst =
   if i < 0 then raise (Operation_error "index out of bounds") else split i [] lst
 ;;
 
-let add ptr value doc =
+let apply_add ptr value doc =
   let rec _add parent p doc =
     match doc, p with
     | `List l, Jsonpointer.ArrayAppend :: _ -> `List (l @ [ value ])
@@ -180,7 +166,7 @@ let add ptr value doc =
   _add Jsonpointer.Root ptr doc
 ;;
 
-let rec remove ptr doc =
+let rec apply_remove ptr doc =
   match doc, ptr with
   | _, [] -> raise (Operation_error "cannot remove an empty pointer")
   | `List l, Jsonpointer.ArrayIndex i :: tl ->
@@ -194,7 +180,7 @@ let rec remove ptr doc =
         then raise (Operation_error "unable to remove, invalid path")
         else List.nth_exn l i
       in
-      if List.length tl = 0 then `List (h @ t) else `List (h @ [ remove tl e ] @ t))
+      if List.length tl = 0 then `List (h @ t) else `List (h @ [ apply_remove tl e ] @ t))
   | `Assoc l, Jsonpointer.ObjectKey k :: tl ->
     (match List.Assoc.find l ~equal:String.equal k with
      | None -> `Assoc l
@@ -202,13 +188,13 @@ let rec remove ptr doc =
        let nl = List.filter l ~f:(fun (key, _) -> not (String.equal key k)) in
        if List.length tl > 0
        then (
-         let v = remove tl e in
+         let v = apply_remove tl e in
          `Assoc ((k, v) :: nl))
        else `Assoc (List.Assoc.remove l ~equal:String.equal k))
   | _ -> raise (Operation_error "unable to remove, invalid path")
 ;;
 
-let rec replace ptr (value : Yojson.Safe.t) doc =
+let rec apply_replace ptr (value : Yojson.Safe.t) doc =
   match doc, ptr with
   | _, [] -> value
   | `List l, Jsonpointer.ArrayIndex i :: tl ->
@@ -219,7 +205,7 @@ let rec replace ptr (value : Yojson.Safe.t) doc =
       let pre, e, post = split_at_index i l in
       match e with
       | Some e ->
-        let v' = replace tl value e in
+        let v' = apply_replace tl value e in
         `List (pre @ [ v' ] @ post)
       | None -> raise (Operation_error "unable to find element in araray"))
     else (
@@ -234,7 +220,7 @@ let rec replace ptr (value : Yojson.Safe.t) doc =
       match e with
       | None -> raise (Operation_error "missing objects cannot be replaced")
       | Some (k, v) ->
-        let v' = replace tl value v in
+        let v' = apply_replace tl value v in
         `Assoc (pre @ [ k, v' ] @ post))
     else (
       let pre, _, post = split_assoc k l in
@@ -256,12 +242,12 @@ let rec eval ptr doc =
   | _ -> raise (Operation_error "path not found")
 ;;
 
-let copy from path doc =
+let apply_copy from path doc =
   let value = eval from doc in
-  add path value doc
+  apply_add path value doc
 ;;
 
-let move src dst doc =
+let apply_move src dst doc =
   if Jsonpointer.equal src dst
   then doc
   else if Jsonpointer.is_descendant src dst
@@ -270,29 +256,28 @@ let move src dst doc =
       (Operation_error "the destination path cannot be a descendant of the source path")
   else (
     let value = eval src doc in
-    let cleaned = remove src doc in
-    add dst value cleaned)
+    let cleaned = apply_remove src doc in
+    apply_add dst value cleaned)
 ;;
 
-let test value path doc =
+let apply_test value path doc =
   let v = eval path doc in
   let msg = Format.asprintf "test operation failed, value not equal" in
   if Yojson.Safe.equal value v then v else raise (Operation_error msg)
 ;;
 
-(** [apply doc patch] applies [patch] into [doc], returning a patched doc.*)
 let rec apply doc patch =
   match patch with
   | op :: tl ->
     let patched_doc =
       match op with
-      | Add (path, value) -> add path value doc
-      | Remove path -> remove path doc
-      | Replace (path, value) -> replace path value doc
-      | Copy (from, path) -> copy from path doc
-      | Move (from, path) -> move from path doc
+      | Add (path, value) -> apply_add path value doc
+      | Remove path -> apply_remove path doc
+      | Replace (path, value) -> apply_replace path value doc
+      | Copy (from, path) -> apply_copy from path doc
+      | Move (from, path) -> apply_move from path doc
       | Test (path, value) ->
-        let _ = test value path doc in
+        let _ = apply_test value path doc in
         doc
     in
     apply patched_doc tl

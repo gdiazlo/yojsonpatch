@@ -8,9 +8,9 @@ type part =
   | ArrayIndex of int
   | ArrayAppend
 
-type pointer = part list
+type t = part list
 
-let empty : pointer = []
+let empty : t = []
 
 let unescape str =
   let str = String.substr_replace_all ~pattern:"~1" ~with_:"/" str in
@@ -26,8 +26,7 @@ let to_part str : part =
      | _ -> ObjectKey str)
 ;;
 
-(** [from_string s] parses [s] into a JSON pointer *)
-let from_string s : pointer =
+let from_string s : t =
   if String.length s <> 0 && not (Char.equal (String.get s 0) '/')
   then raise (Invalid_pointer "path must start with '/'")
   else (
@@ -47,7 +46,6 @@ let pp_part fmt part =
   | ArrayAppend -> Format.fprintf fmt "/-"
 ;;
 
-(** [pp fmt pointer] prints a JSON pointer into [fmt] *)
 let rec pp fmt pointer =
   match pointer with
   | [] -> ()
@@ -55,7 +53,6 @@ let rec pp fmt pointer =
   | part :: rest -> Format.fprintf fmt "%a%a" pp_part part pp rest
 ;;
 
-(** [is_descendant src dst] determines if [dst] is a descendant of [src] *)
 let rec is_descendant src dst =
   let cmp p1 p2 =
     match p1, p2 with
@@ -78,16 +75,16 @@ let equal_part p1 p2 =
   | _ -> false
 ;;
 
-(** [equal ptr1 ptr2] returns true if [ptr1] and [ptr2] are equal. They will if all their parts are also equal. *)
 let rec equal ptr1 ptr2 =
   match ptr1, ptr2 with
-  | [], [] -> true (* both empty lists *)
+  | [], [] -> true
   | part1 :: rest1, part2 :: rest2 ->
     if equal_part part1 part2 then equal rest1 rest2 else false
-  | _, _ -> false (* different lengths *)
+  | _, _ -> false
 ;;
 
 let iter ptr ~f = List.iter ptr ~f
 let fold_left ptr ~init ~f = List.fold_left ptr ~init ~f
 let len ptr = List.length ptr
 let to_list ptr = ptr
+let pointer str = from_string str
