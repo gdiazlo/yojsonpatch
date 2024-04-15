@@ -16,8 +16,8 @@ val empty : t
 (** [from_string s] parses [s] into a JSON pointer. *)
 val from_string : string -> t
 
-(** [pointer str] parses [str] into a [Jsonpointer.t] *)
-val pointer : string -> t
+(** [to_string ptr] returns a JSON pointer as a string. *)
+val to_string : t -> string
 
 (** [pp fmt pointer] prints a JSON pointer into [fmt]. *)
 val pp : Format.formatter -> t -> unit
@@ -34,8 +34,5 @@ val iter : t -> f:(part -> unit) -> unit
 (** [fold_left ptr ~init ~f] folds over the JSON pointer [ptr] from left to right with initial value [init] and function [f]. *)
 val fold_left : t -> init:'a -> f:('a -> part -> 'a) -> 'a
 
-(** [len ptr] returns the length of the JSON pointer [ptr]. *)
-val len : t -> int
-
-(** [to_list ptr] converts the JSON pointer [ptr] into a list of parts. *)
-val to_list : t -> part list
+(** [length ptr] returns the length of the JSON pointer [ptr]. *)
+val length : t -> int

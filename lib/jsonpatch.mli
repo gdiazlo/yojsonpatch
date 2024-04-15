@@ -3,7 +3,7 @@
 exception Invalid_operation of string
 exception Invalid_patch of string
 exception Operation_error of string
-exception Operation_not_implemented of string
+exception Test_failed of string
 
 (** JSON Patch RFC 6902 operations.
     - [Add (target, value)] adds [value] at the specified [target] location. Use [-] for index to insert at end of array.
@@ -32,19 +32,26 @@ val from_string : string -> t
 (** [from_json s] parses [s] into a JSON patch. *)
 val from_json : Yojson.Safe.t -> t
 
+(** [to_json patch] returns a JSON patch as a Yojson.Safe.t *)
+val to_json : t -> Yojson.Safe.t
+
 (** [apply doc patch] applies [patch] into [doc], returning a patched doc. *)
 val apply : Yojson.Safe.t -> t -> Yojson.Safe.t
 
-
 (** Builds n [Add] operation from a JSON pointer and JSON value strings *)
 val add : string -> string -> operation
+
 (** Builds a [Remove] operation from a JSON pointer string*)
-val remove : string ->  operation
+val remove : string -> operation
+
 (** Builds a [Replace] operation from a JSON pointer and JSON value strings *)
 val replace : string -> string -> operation
+
 (** Builds a [Copy] operation from JSON pointer strings *)
 val copy : string -> string -> operation
+
 (** Builds a [Copy] operation from JSON pointer strings *)
 val move : string -> string -> operation
+
 (** Builds a [Test] operation from a JSON pointer and JSON value strings *)
 val test : string -> string -> operation

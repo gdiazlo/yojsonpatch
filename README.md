@@ -32,13 +32,13 @@ let patch =
   ; add "/purchased" {|"2019-10-22"|}
   ]
 ;;
-
 let () =
   let doc = Yojson.Safe.from_string doc_str in
   let patched_doc = Jsonpatch.apply doc patch in
   Format.printf
-    "Original doc:\n%s\nPatched doc:\n%s\n"
+    "Original doc:\n%s\nPatch:\n%s\nPatched doc:\n%s\n"
     (Yojson.Safe.pretty_to_string doc)
+    (Yojson.Safe.pretty_to_string (to_json patch))
     (Yojson.Safe.pretty_to_string patched_doc)
 ;;
 ```
@@ -46,10 +46,16 @@ let () =
 To run the example:
 
 ```
-» dune build
-» dune exec example/example.exe
 Original doc:
 { "title": "UNIX: A History and a Memoir" }
+Patch:
+[
+  { "op": "add", "path": "author", "value": "Brian W. Kernighan" },
+  { "op": "add", "path": "published", "value": 2020 },
+  { "op": "add", "path": "publisher", "value": "Kindle Direct Publishing" },
+  { "op": "add", "path": "stars", "value": 5 },
+  { "op": "add", "path": "purchased", "value": "2019-10-22" }
+]
 Patched doc:
 {
   "title": "UNIX: A History and a Memoir",
@@ -58,8 +64,7 @@ Patched doc:
   "publisher": "Kindle Direct Publishing",
   "stars": 5,
   "purchased": "2019-10-22"
-}
-```
+}```
 
 ## TODO
 
