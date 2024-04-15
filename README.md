@@ -6,7 +6,47 @@ This library does not generate JSON patches, it only applies them.
 
 ## Documentation
 
-TODO
+### Jsonpatch Module
+
+The Jsonpatch module allows creating, applying, and manipulating JSON patches.
+It cannot generate a patch by calculating the differences between two JSON documents.
+
+#### Exceptions
+
+`Invalid_operation of string`: Exception raised for invalid operations.
+`Invalid_patch of string`: Exception raised for invalid JSON patches.
+`Operation_error of string`: Exception raised for errors during operations.
+`Operation_not_implemented of string`: Exception raised for unimplemented operations.
+
+#### Operations
+
+`Add (target, value`): Adds value at the specified target location. Use - for the index to insert at the end of an array.
+`Remove target`: Removes the value at the specified target location.
+`Replace (target, value)`: Replaces the value at target with value.
+`Move (source, destination)`: Moves the value from source to destination.
+`Copy (source, destination)`: Copies the value from source to destination.
+`Test (target, value)`: Checks if the value at target matches value.
+
+#### Types
+
+`type operation`: Represents JSON Patch RFC 6902 operations.
+`type t`: Represents a JSON patch, which is a list of operations that can be applied to a document to achieve the desired state.
+
+#### Functions
+
+`pp : Format.formatter -> t -> unit`: Prints a JSON patch.
+`from_string : string -> t`: Parses a string into a JSON patch.
+`from_json : Yojson.Safe.t -> t`: Parses a JSON value into a JSON patch.
+`apply : Yojson.Safe.t -> t -> Yojson.Safe.t`: Applies a JSON patch to a JSON document and returns the patched document.
+
+#### Operations Constructors
+
+`add : string -> string -> operation`: Builds an Add operation from a JSON pointer and JSON value strings.
+`remove : string -> operation`: Builds a Remove operation from a JSON pointer string.
+`replace : string -> string -> operation`: Builds a Replace operation from a JSON pointer and JSON value strings.
+`copy : string -> string -> operation`: Builds a Copy operation from JSON pointer strings.
+`move : string -> string -> operation`: Builds a Move operation from JSON pointer strings.
+`test : string -> string -> operation`: Builds a Test operation from a JSON pointer and JSON value strings.
 
 ## Examples
 
