@@ -283,3 +283,10 @@ let rec apply doc patch =
     apply patched_doc tl
   | [] -> doc
 ;;
+
+let add ptr value = Add (Jsonpointer.pointer ptr, Yojson.Safe.from_string value)
+let remove ptr = Remove (Jsonpointer.pointer ptr)
+let replace ptr value = Add (Jsonpointer.pointer ptr, Yojson.Safe.from_string value)
+let copy src dst = Copy (Jsonpointer.pointer src, Jsonpointer.pointer dst)
+let move src dst = Move (Jsonpointer.pointer src, Jsonpointer.pointer dst)
+let test ptr value = Test (Jsonpointer.pointer ptr, Yojson.Safe.from_string value)
