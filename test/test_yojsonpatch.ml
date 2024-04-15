@@ -21,12 +21,14 @@ let exec_test test_case =
     let patched_doc = Jsonpatch.apply doc patch in
     Alcotest.(check yojson) comment expected patched_doc
   with
+  | Jsonpatch.Test_failed msg ->
+    (match test_case |> member "error" with
+     | `Null -> Alcotest.fail msg
+     | err -> Alcotest.(check string) comment (err |> to_string) msg)
   | Jsonpatch.Operation_error msg ->
     (match test_case |> member "error" with
      | `Null -> Alcotest.fail msg
      | err -> Alcotest.(check string) comment (err |> to_string) msg)
-  | Jsonpatch.Operation_not_implemented _ ->
-    Alcotest.fail "Operation not implemented exception!"
   | Jsonpatch.Invalid_patch msg ->
     (match test_case |> member "error" with
      | `Null -> Alcotest.fail msg

@@ -13,8 +13,15 @@ type t = part list
 let empty : t = []
 
 let unescape str =
-  let str = String.substr_replace_all ~pattern:"~1" ~with_:"/" str in
-  String.substr_replace_all ~pattern:"~0" ~with_:"~" str
+  str
+  |> String.substr_replace_all ~pattern:"~1" ~with_:"/"
+  |> String.substr_replace_all ~pattern:"~0" ~with_:"~"
+;;
+
+let escape str =
+  str
+  |> String.substr_replace_all ~pattern:"~" ~with_:"~0"
+  |> String.substr_replace_all ~pattern:"/" ~with_:"~1"
 ;;
 
 let to_part str : part =
@@ -24,6 +31,21 @@ let to_part str : part =
     (match str with
      | "-" -> ArrayAppend
      | _ -> ObjectKey str)
+;;
+
+let to_string ptr =
+  match ptr with
+  | [] -> ""
+  | ptr ->
+    List.map
+      ~f:(fun part ->
+        match part with
+        | ArrayIndex i -> string_of_int i
+        | ObjectKey key -> key |> escape
+        | Root -> "/"
+        | ArrayAppend -> "-")
+      ptr
+    |> String.concat ~sep:"/"
 ;;
 
 let from_string s : t =
@@ -85,6 +107,4 @@ let rec equal ptr1 ptr2 =
 
 let iter ptr ~f = List.iter ptr ~f
 let fold_left ptr ~init ~f = List.fold_left ptr ~init ~f
-let len ptr = List.length ptr
-let to_list ptr = ptr
-let pointer str = from_string str
+let length ptr = List.length ptr

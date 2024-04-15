@@ -24,7 +24,8 @@ let () =
   let doc = Yojson.Safe.from_string doc_str in
   let patched_doc = Jsonpatch.apply doc patch in
   Format.printf
-    "Original doc:\n%s\nPatched doc:\n%s\n"
+    "Original doc:\n%s\nPatch:\n%s\nPatched doc:\n%s\n"
     (Yojson.Safe.pretty_to_string doc)
+    (Yojson.Safe.pretty_to_string (to_json patch))
     (Yojson.Safe.pretty_to_string patched_doc)
 ;;
