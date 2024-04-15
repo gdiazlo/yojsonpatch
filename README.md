@@ -22,7 +22,8 @@ let doc_str = {|
 |}
 
 (** We can create a patch from its JSON form as a string using the
-    [Jsonpatch.from_string str] function *)
+    [Jsonpatch.from_string str] function or using convenience
+    functions like add below *)
 let patch =
   [ add "/author" {|"Brian W. Kernighan"|}
   ; add "/published" "2020"
