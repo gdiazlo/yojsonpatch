@@ -64,7 +64,8 @@ Patched doc:
   "publisher": "Kindle Direct Publishing",
   "stars": 5,
   "purchased": "2019-10-22"
-}```
+}
+```
 
 ## TODO
 
