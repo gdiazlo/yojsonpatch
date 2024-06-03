@@ -1,5 +1,3 @@
-open Core
-
 exception Invalid_pointer of string
 
 type part =
@@ -13,15 +11,11 @@ type t = part list
 let empty : t = []
 
 let unescape str =
-  str
-  |> String.substr_replace_all ~pattern:"~1" ~with_:"/"
-  |> String.substr_replace_all ~pattern:"~0" ~with_:"~"
+  str |> Utils.substr_replace_all "~1" "/" |> Utils.substr_replace_all "~0" "~"
 ;;
 
 let escape str =
-  str
-  |> String.substr_replace_all ~pattern:"~" ~with_:"~0"
-  |> String.substr_replace_all ~pattern:"/" ~with_:"~1"
+  str |> Utils.substr_replace_all "~" "~0" |> Utils.substr_replace_all "/" "~1"
 ;;
 
 let to_part str : part =
@@ -38,14 +32,14 @@ let to_string ptr =
   | [] -> ""
   | ptr ->
     List.map
-      ~f:(fun part ->
+      (fun part ->
         match part with
         | ArrayIndex i -> string_of_int i
         | ObjectKey key -> key |> escape
         | Root -> "/"
         | ArrayAppend -> "-")
       ptr
-    |> String.concat ~sep:"/"
+    |> String.concat "/"
 ;;
 
 let from_string s : t =
@@ -56,8 +50,8 @@ let from_string s : t =
     | "" -> empty
     | "/" -> empty
     | _ ->
-      let l = String.split s ~on:'/' |> List.map ~f:unescape |> List.map ~f:to_part in
-      List.drop l 1)
+      let l = String.split_on_char '/' s |> List.map unescape |> List.map to_part in
+      Utils.list_drop 1 l)
 ;;
 
 let pp_part fmt part =
@@ -105,6 +99,6 @@ let rec equal ptr1 ptr2 =
   | _, _ -> false
 ;;
 
-let iter ptr ~f = List.iter ptr ~f
-let fold_left ptr ~init ~f = List.fold_left ptr ~init ~f
+let iter ptr f = List.iter ptr f
+let fold_left ptr acc f = List.fold_left ptr acc f
 let length ptr = List.length ptr

@@ -1,4 +1,3 @@
-open! Core
 module Jsonpatch = Yojsonpatch.Jsonpatch
 module Jsonpointer = Yojsonpatch.Jsonpointer
 
@@ -44,20 +43,27 @@ let exec_test test_case =
   | Yojson.Json_error msg -> Alcotest.fail msg
 ;;
 
+let is_key_present key lst =
+  try
+    let _ = List.assoc key lst in
+    true
+  with
+  | Not_found -> false
+;;
+
 let gen_tests filename =
   let open Yojson.Safe in
   try
     let json = from_file filename in
     match json with
     | `List test_cases ->
-      List.filter test_cases ~f:(fun e ->
-        match e with
-        | `Assoc l ->
-          (match List.Assoc.find l ~equal:String.equal "skip" with
-           | Some _ -> false
-           | None -> true)
-        | _ -> false)
-      |> List.map ~f:(fun case ->
+      List.filter
+        (fun e ->
+          match e with
+          | `Assoc l -> not (is_key_present "skip" l)
+          | _ -> false)
+        test_cases
+      |> List.map (fun case ->
         let comment = case |> Util.member "comment" |> pretty_to_string in
         Alcotest.test_case comment `Quick (fun () -> exec_test case))
     | _ -> failwith "Invalid JSON format: Expected a JSON array"

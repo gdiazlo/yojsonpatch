@@ -1,8 +1,8 @@
 (** Jsonpatch module allows creating, applying, and manipulating JSON patches. *)
 
+exception Operation_error of string
 exception Invalid_operation of string
 exception Invalid_patch of string
-exception Operation_error of string
 exception Test_failed of string
 
 (** JSON Patch RFC 6902 operations.

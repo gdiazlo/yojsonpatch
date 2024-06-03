@@ -71,7 +71,7 @@ Patched doc:
 
 - [x] Create `.mli` files to export the required API
 - [ ] Add more tests/fix skipped tests
-- [ ] May be remove Core depdendency
+- [x] May be remove Core depdendency
 - [ ] Implement JSON patches generation
 - [ ] Publish it to opam
 
