@@ -1,8 +1,8 @@
-open Core
+open Utils
 
+exception Operation_error of string
 exception Invalid_operation of string
 exception Invalid_patch of string
-exception Operation_error of string
 exception Test_failed of string
 
 type operation =
@@ -32,13 +32,13 @@ let operation_pp fmt operation =
 
 let pp fmt patch =
   Format.fprintf fmt "[";
-  List.iter patch ~f:(fun op -> operation_pp fmt op);
+  List.iter (fun op -> operation_pp fmt op) patch;
   Format.fprintf fmt "]"
 ;;
 
 let has_member name = function
   | `Assoc l ->
-    (try List.Assoc.find_exn l ~equal:String.equal name with
+    (try List.assoc name l with
      | _ -> raise (Invalid_operation ("missing '" ^ name ^ "' parameter")))
   | _ -> raise (Invalid_operation "op is not an object")
 ;;
@@ -87,7 +87,7 @@ let op_from_json json =
 
 let from_json json =
   match json with
-  | `List l -> List.map l ~f:(fun op -> op_from_json op)
+  | `List l -> List.map (fun op -> op_from_json op) l
   | _ -> raise (Invalid_patch "patch must be an array of operations")
 ;;
 
@@ -102,7 +102,7 @@ let from_string s =
 let to_json patch =
   let operations =
     patch
-    |> List.map ~f:(fun op ->
+    |> List.map (fun op ->
       match op with
       | Add (ptr, v) ->
         `Assoc
@@ -147,26 +147,6 @@ let safe_add ptr_part doc =
   | _, _ -> doc
 ;;
 
-let split_assoc key assoc_list =
-  let rec split pre elem post = function
-    | [] -> List.rev pre, elem, List.rev post
-    | (k, v) :: tail ->
-      (match String.equal k key, elem with
-       | true, None -> split pre (Some (k, v)) post tail
-       | _, _ -> split ((k, v) :: pre) elem post tail)
-  in
-  split [] None [] assoc_list
-;;
-
-let split_at_index i lst =
-  let rec split i acc = function
-    | [] -> List.rev acc, None, []
-    | hd :: tl ->
-      if i = 0 then List.rev acc, Some hd, tl else split (i - 1) (hd :: acc) tl
-  in
-  if i < 0 then raise (Operation_error "index out of bounds") else split i [] lst
-;;
-
 let is_empty = function
   | [] -> true
   | _ -> false
@@ -182,7 +162,7 @@ let apply_add ptr value doc =
       then raise (Operation_error "index out of bounds")
       else if is_empty tl
       then (
-        let pre, post = List.split_n l i in
+        let pre, post = split_n i l in
         `List (pre @ [ value ] @ post))
       else (
         let pre, e, post = split_at_index i l in
@@ -216,24 +196,25 @@ let rec apply_remove ptr doc =
     if i > List.length l
     then raise (Operation_error "index out of bounds")
     else (
-      let h = List.take l i in
-      let t = List.drop l (i + 1) in
+      let h = list_take i l in
+      let t = list_drop (i + 1) l in
       let e =
         if List.length l <= i
         then raise (Operation_error "unable to remove, invalid path")
-        else List.nth_exn l i
+        else list_nth_exn i l
       in
       if List.length tl = 0 then `List (h @ t) else `List (h @ [ apply_remove tl e ] @ t))
   | `Assoc l, Jsonpointer.ObjectKey k :: tl ->
-    (match List.Assoc.find l ~equal:String.equal k with
-     | None -> `Assoc l
-     | Some e ->
-       let nl = List.filter l ~f:(fun (key, _) -> not (String.equal key k)) in
-       if List.length tl > 0
-       then (
-         let v = apply_remove tl e in
-         `Assoc ((k, v) :: nl))
-       else `Assoc (List.Assoc.remove l ~equal:String.equal k))
+    let e =
+      try List.assoc k l with
+      | _ -> `Assoc l
+    in
+    let nl = List.filter (fun (key, _) -> key <> k) l in
+    if List.length tl > 0
+    then (
+      let v = apply_remove tl e in
+      `Assoc ((k, v) :: nl))
+    else `Assoc (List.filter (fun (k', _) -> k' <> k) l)
   | _ -> raise (Operation_error "unable to remove, invalid path")
 ;;
 
@@ -275,13 +256,17 @@ let rec eval ptr doc =
   match doc, ptr with
   | v, [] -> v
   | `List l, Jsonpointer.ArrayIndex i :: tl ->
-    (match List.nth l i with
-     | Some e -> eval tl e
-     | None -> raise (Operation_error "element path not found in array"))
+    let e =
+      try List.nth l i with
+      | _ -> raise (Operation_error "element path not found in array")
+    in
+    eval tl e
   | `Assoc l, Jsonpointer.ObjectKey k :: tl ->
-    (match List.Assoc.find l ~equal:String.equal k with
-     | None -> raise (Operation_error ("key '" ^ k ^ "' not found in object"))
-     | Some e -> eval tl e)
+    let e =
+      try List.assoc k l with
+      | _ -> raise (Operation_error ("key '" ^ k ^ "' not found in object"))
+    in
+    eval tl e
   | _ -> raise (Operation_error "path not found")
 ;;
 

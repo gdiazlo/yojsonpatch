@@ -1,6 +1,6 @@
 (test
  (name test_yojsonpatch)
- (libraries core yojson alcotest yojsonpatch)
+ (libraries yojson alcotest yojsonpatch)
  (preprocess
   (pps ppx_let ppx_expect ppx_assert))
  (deps
