@@ -1,0 +1,5 @@
+(executable
+ (name jp)
+ (libraries yojson yojsonpatch)
+ (preprocess
+  (pps ppx_let)))
