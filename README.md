@@ -66,6 +66,13 @@ Patched doc:
   "purchased": "2019-10-22"
 }
 ```
+## Benchmarks
+
+Using the program in `example/jp`, we've applied a 45MB patch to a 17MB document
+generating a 26MB of prettified patched document in around 14 secs, using less than 1GB
+of memory in a Apple M1 CPU.
+
+Don't know if this is good or bad yet.
 
 ## TODO
 
@@ -74,6 +81,7 @@ Patched doc:
 - [x] May be remove Core depdendency
 - [ ] Implement JSON patches generation
 - [ ] Publish it to opam
+- [ ] Benchmarks
 
 ## Related projects
 
