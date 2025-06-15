@@ -33,11 +33,11 @@ let to_string ptr =
   | ptr ->
     List.map
       (fun part ->
-        match part with
-        | ArrayIndex i -> string_of_int i
-        | ObjectKey key -> key |> escape
-        | Root -> "/"
-        | ArrayAppend -> "-")
+         match part with
+         | ArrayIndex i -> string_of_int i
+         | ObjectKey key -> key |> escape
+         | Root -> "/"
+         | ArrayAppend -> "-")
       ptr
     |> String.concat "/"
 ;;

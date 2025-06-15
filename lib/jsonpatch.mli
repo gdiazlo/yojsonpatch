@@ -38,7 +38,7 @@ val to_json : t -> Yojson.Safe.t
 (** [apply doc patch] applies [patch] into [doc], returning a patched doc. *)
 val apply : Yojson.Safe.t -> t -> Yojson.Safe.t
 
-(** Builds n [Add] operation from a JSON pointer and JSON value strings *)
+(** Builds an [Add] operation from a JSON pointer and JSON value strings *)
 val add : string -> string -> operation
 
 (** Builds a [Remove] operation from a JSON pointer string*)
