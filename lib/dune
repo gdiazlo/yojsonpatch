@@ -1,7 +1,7 @@
 (library
  (name yojsonpatch)
  (public_name yojsonpatch)
- (modules jsonpatch jsonpointer utils)
+ (modules jsonpatch jsonpointer jsondiff utils)
  (libraries yojson str)
  (preprocess
   (pps ppx_let)))

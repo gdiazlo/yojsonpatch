@@ -5,3 +5,7 @@
   (pps ppx_let ppx_expect ppx_assert))
  (deps
   (glob_files_rec *.json)))
+
+(test
+ (name test_yojsondiff)
+ (libraries yojson alcotest yojsonpatch))
