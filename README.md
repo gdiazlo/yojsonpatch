@@ -176,6 +176,7 @@ Don't know if this is good or bad yet.
 ## Related projects
 
 - [yojson](https://github.com/ocaml-community/yojson)
+- Rust [json-patch](https://github.com/idubrov/json-patch/), on which this lib is based
 
 ## License
 
