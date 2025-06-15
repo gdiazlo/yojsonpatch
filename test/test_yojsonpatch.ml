@@ -59,9 +59,9 @@ let gen_tests filename =
     | `List test_cases ->
       List.filter
         (fun e ->
-          match e with
-          | `Assoc l -> not (is_key_present "skip" l)
-          | _ -> false)
+           match e with
+           | `Assoc l -> not (is_key_present "skip" l)
+           | _ -> false)
         test_cases
       |> List.map (fun case ->
         let comment = case |> Util.member "comment" |> pretty_to_string in
