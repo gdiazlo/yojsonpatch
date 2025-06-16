@@ -3,17 +3,19 @@ let rec diff_impl ptr patch a b =
   | `Assoc obj_a, `Assoc obj_b -> object_diff ptr patch obj_a obj_b
   | `List array_a, `List array_b -> array_diff ptr patch array_a array_b
   | a, b when Yojson.Safe.equal a b -> patch
-  | _, _ -> Jsonpatch.Replace (ptr, b) :: patch
+  | _, _ -> patch @ [ Jsonpatch.Replace (ptr, b) ]
 
 and array_diff ptr patch a b =
-  let len = max (List.length a) (List.length b) in
+  let len_a = List.length a in
+  let len_b = List.length b in
+  let max_len = max len_a len_b in
   let rec loop idx shift patch =
-    if idx >= len
+    if idx >= max_len
     then patch
     else (
       let current_ptr = ptr @ [ Jsonpointer.ArrayIndex (idx - shift) ] in
-      let a_elem = if idx < List.length a then Some (List.nth a idx) else None in
-      let b_elem = if idx < List.length b then Some (List.nth b idx) else None in
+      let a_elem = if idx < len_a then Some (List.nth a idx) else None in
+      let b_elem = if idx < len_b then Some (List.nth b idx) else None in
       let new_patch =
         match a_elem, b_elem with
         | Some a_val, Some b_val ->
@@ -54,7 +56,7 @@ and object_diff ptr patch a b =
   in
   (* Remove keys that are not in the right object *)
   List.fold_left
-    (fun acc_patch (key, _left_value) ->
+    (fun acc_patch (key, _) ->
        if List.assoc_opt key b = None
        then (
          let current_ptr = ptr @ [ Jsonpointer.ObjectKey key ] in
@@ -64,7 +66,4 @@ and object_diff ptr patch a b =
     a
 ;;
 
-let diff a b =
-  let patch = [] in
-  diff_impl [] patch a b
-;;
+let diff a b = diff_impl [] [] a b
